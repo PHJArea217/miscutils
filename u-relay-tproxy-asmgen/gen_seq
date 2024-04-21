@@ -3,35 +3,63 @@ set -eu
 case "$2" in
 	master_lds)
 		printf 'SECTIONS {
-.data {
+.data.master-ents : {
 	LONG(0xf200a01f);
 	SHORT(0);
 	SHORT(nr_ents);
-	LONG(0)
-	LONG(0)
-	ents_start = .
+	LONG(0);
+	LONG(0);
+	ents_start = .;
 '>obj/master.lds
-		seq -f 'master-%.f.o(.data.master-ents)' -- 0 "$1" >> obj/master.lds
-		printf 'nr_ents = (.-ents_start)/32\n. = 0\n' >> obj/master.lds
-		seq -f 'master-%.f.o(.data.master-data)' -- 0 "$1" >> obj/master.lds
-		printf '} }' >> obj/master.lds
+		seq -f 'obj/master_%.f.o(.data.master-ents)' -- 0 "$1" >> obj/master.lds
+		printf 'nr_ents = ABSOLUTE((.-ents_start)/32);
+}
+OVERLAY 0 : AT (0) {
+.master-data {\n' >> obj/master.lds
+		seq -f 'obj/master_%.f.o(.data.master-data)' -- 0 "$1" >> obj/master.lds
+		printf '} } }' >> obj/master.lds
 		;;
 	domains_lds)
 		printf 'SECTIONS {
-.data {
-	LONG(0xf200a01e)
-	LONG(nr_ents)
-	ents_start = .
+.data : {
+	LONG(0xf200a01e);
+	LONG(nr_ents);
+	ents_start = .;
 ' > obj/domains.lds
-		seq -f 'domains-%.f.o(.data.domain-ents)' -- 0 "$1" >> obj/domains.lds
-		printf 'nr_ents = (.-ents_start)/8\ndata_start = .\nLONG(0)\n' >> obj/domains.lds
-		seq -f 'ALIGN(4); domains_%.f_base = (. - data_start)/4; domains-%.f.o(.data.domain-data);' -- 0 "$1" >> obj/domains.lds
+		seq -f 'obj/domains_%.f.o(.data.domain-ents)' -- 0 "$1" >> obj/domains.lds
+		printf 'nr_ents = ABSOLUTE((.-ents_start)/8);\ndata_start = .;\nLONG(0);\n' >> obj/domains.lds
+		COUNTER=0
+		while [ "$COUNTER" -le "$1" ]; do
+			printf '. = ALIGN(4); domains_%d_base = ABSOLUTE((. - data_start)/4); obj/domains_%d.o(.data.domain-data)\n' "$COUNTER" "$COUNTER" >> obj/domains.lds
+			COUNTER="$((COUNTER+1))"
+		done
 		printf '} }'>>obj/domains.lds
 		;;
 	domains_s)
 		COUNTER=0
-		while [ "$COUNTER" -lt "$1" ]; do
-			printf '.include "domains_common.inc"\n.macro domain_ent i, d\ndomain_ent_nr %d, \\i, \\d\n.endm\n.include "domains_%d.inc"\n' "$COUNTER" "$COUNTER" >> "obj/domains_$COUNTER.gen.S"
+		while [ "$COUNTER" -le "$1" ]; do
+			printf '.include "domains_common.inc"\n.macro domain_ent i, d\ndomain_ent_nr %d, \\i, \\d\n.endm\n.include "user/domains_%d.inc"\n' "$COUNTER" "$COUNTER" > "obj/domains_$COUNTER.gen.S"
+			COUNTER="$((COUNTER+1))"
+		done
+		;;
+	compile_domains_s)
+		COUNTER=0
+		while [ "$COUNTER" -le "$1" ]; do
+			"$3" -o "obj/domains_$COUNTER.o" "obj/domains_$COUNTER.gen.S"
+			COUNTER="$((COUNTER+1))"
+		done
+		;;
+	master_s)
+		COUNTER=0
+		while [ "$COUNTER" -le "$1" ]; do
+			printf '.include "domains_common.inc"\n.include "user/master_%d.inc"\n' "$COUNTER" > "obj/master_$COUNTER.gen.S"
+			COUNTER="$((COUNTER+1))"
+		done
+		;;
+	compile_master_s)
+		COUNTER=0
+		while [ "$COUNTER" -le "$1" ]; do
+			"$3" -o "obj/master_$COUNTER.o" "obj/master_$COUNTER.gen.S"
 			COUNTER="$((COUNTER+1))"
 		done
 		;;

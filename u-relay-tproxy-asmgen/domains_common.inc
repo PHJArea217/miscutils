@@ -21,6 +21,7 @@ dis_\@ = (.-domains_start_local)/4
 .4byte 0, 0
 .popsection
 .pushsection .data.master-data
+.balign 8
 ent_\@_off = .
 \typemacro \typeargs
 ent_\@_size = . - ent_\@_off
