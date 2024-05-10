@@ -5,8 +5,8 @@ case "$2" in
 		printf 'SECTIONS {
 .data.master-ents : {
 	LONG(0xf200a01f);
-	SHORT(0);
 	SHORT(nr_ents);
+	SHORT(0);
 	LONG(0);
 	LONG(0);
 	ents_start = .;
