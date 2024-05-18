@@ -2,6 +2,17 @@
 domains_start_local = .
 .popsection
 .altmacro
+.macro domain_stream i, d
+.pushsection .domain-stream
+.2byte 1
+.2byte domain_stream_len_\@
+.4byte \i
+1:
+.asciz \d
+.balign 8
+domain_stream_len_\@ = . - 1b
+.popsection
+.endm
 .macro domain_ent_nr n, i, d
 .pushsection .data.domain-ents
 .4byte \i, domains_\n\()_base+dis_\@
