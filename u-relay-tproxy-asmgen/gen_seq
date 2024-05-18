@@ -21,6 +21,9 @@ OVERLAY 0 : AT (0) {
 		;;
 	domains_lds)
 		printf 'SECTIONS {
+.domain-stream : {
+	*(.domain-stream)
+}
 .data : {
 	LONG(0xf200a01e);
 	LONG(nr_ents);
