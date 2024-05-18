@@ -51,7 +51,7 @@ static int hosts_handler(uint32_t idx, const char *name, struct fh_data *data) {
 }
 static int staticdir_handler(uint32_t idx, const char *name, struct fh_data *data) {
 	if (!name) {
-		if (mknodat(data->static_dir_fd, ".created", S_IFREG)) return 1;
+		if (mknodat(data->static_dir_fd, ".created", S_IFREG|0644)) return 1;
 		return 0;
 	}
 	char ipv6[64] = {[0] = 'X', [1] = ','};
@@ -106,7 +106,12 @@ int main(int argc, char **argv) {
 	}
 	if (!argv[optind]) {
 help_text:
-		fprintf(stderr, "Usage: objcopy -O binary obj/domains.elf source_stream -j .domain-stream\n%s [-f FORMAT] [-s] source_stream\nAvailable formats are:\n", argv[0]);
+		fprintf(stderr, "Usage: objcopy -O binary obj/domains.elf source_stream -j .domain-stream\n"
+				"%s [-f FORMAT] [-s] source_stream\n"
+				"\n"
+				"-or-\n"
+				"7z x obj/domains.elf -so .domain-stream | %s [-f FORMAT] [-s] -\n"
+				"Available formats are:\n", argv[0]);
 		for (int i = 0; i < (sizeof(handlers)/sizeof(handlers[0])); i++) {
 			fprintf(stderr, "%s\n", handlers[i].format_name);
 		}
