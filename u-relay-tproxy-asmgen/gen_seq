@@ -23,6 +23,8 @@ OVERLAY 0 : AT (0) {
 		printf 'SECTIONS {
 .domain-stream : {
 	*(.domain-stream)
+	LONG(0xffff0000);
+	LONG(0);
 }
 .data : {
 	LONG(0xf200a01e);
