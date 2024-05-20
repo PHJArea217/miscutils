@@ -72,7 +72,7 @@ struct bin_header {uint16_t version, uint16_t length, uint32_t idx};
 int main(int argc, char **argv) {
 	int opt;
 	int allow_hash = 0;
-	struct format_handler *fh = &handlers[];
+	struct format_handler *fh = &handlers[1]; // "hosts" is default
 	struct fh_data data = {.static_dir_fd = -1};
 	const char *static_dir = NULL;
 	while ((opt = getopt(argc, argv, "sf:a:b:d:H")) >= 0) {
