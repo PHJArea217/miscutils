@@ -32,4 +32,4 @@ socat TCP-LISTEN:4,bind=64:ff9b::2,fork,reuseaddr TCP:0.0.0.2:4
 socat TCP-LISTEN:65534,bind=64:ff9b::ffff:fffe,fork,reuseaddr TCP:255.255.255.254:65534
 socat TCP-LISTEN:65535,bind=64:ff9b::ffff:fffe,fork,reuseaddr TCP:255.255.255.254:65535
 
-Except that we generate the TCP destination dynamically and don't have say, 280 trillion instances of socat.
+Except that we generate the TCP destination dynamically with some string and regex operations and don't have say, 280 trillion instances of socat.
