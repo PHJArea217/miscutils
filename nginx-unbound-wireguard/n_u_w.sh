@@ -18,7 +18,7 @@ case "$IDIR" in
 			:>"$NETNS_FILE"
 			unshare -n mount --bind /proc/self/ns/net "$NETNS_FILE"
 		fi
-		mkdir -p "$IDIR/conf" "$IDIR/etc/nginx" "$IDIR/host_etc"
+		mkdir -p "$IDIR/conf" "$IDIR/etc/nginx" "$IDIR/etc/unbound" "$IDIR/host_etc"
 		mount --bind -- "$2" "$IDIR/conf"
 		shift 2
 		cd "$IDIR"
@@ -29,7 +29,9 @@ case "$IDIR" in
 			"::respawn:/usr/sbin/unbound" \
 			"::respawn:$IDIR/conf/exec-nginx"
 		for x in host_etc/* host_etc/.??*; do
-			ln -s "$IDIR/$x" etc/ || :
+			if [ -e "$x" ] && [ ! -e "${x#host_}" ]; then
+				ln -s "$IDIR/$x" etc/ || :
+			fi
 		done
 		mount --bind etc /etc
 		export N_U_W_IDIR="$IDIR" N_U_W_NETNS="$NETNS_FILE"
