@@ -13,6 +13,7 @@ mount -t tmpfs -o mode=0755 none /proc/fs/nfsd
 IDIR="$(mktemp -d "/proc/fs/nfsd/tmp.XXXXXXXXXX")"
 case "$IDIR" in
 	/proc/fs/nfsd/tmp.??????????)
+		chmod 755 "$IDIR"
 		if [ ! -f "$NETNS_FILE" ]; then
 			NETNS_FILE="$IDIR/anon_netns"
 			:>"$NETNS_FILE"
@@ -22,21 +23,26 @@ case "$IDIR" in
 		mount --bind -- "$2" "$IDIR/conf"
 		shift 2
 		cd "$IDIR"
+		set -C
+		echo nameserver 127.0.0.1 > etc/resolv.conf
 		mount --rbind /etc host_etc
-		mount --bind conf/nginx etc/nginx
-		mount --bind conf/unbound etc/unbound
+		mount --rbind conf/nginx etc/nginx
+		mount --rbind conf/unbound etc/unbound
 		printf "%s\n" > etc/inittab \
-			"::respawn:/usr/sbin/unbound" \
+			"::respawn:/usr/bin/ld.so /usr/sbin/unbound" \
 			"::respawn:$IDIR/conf/exec-nginx"
 		for x in host_etc/* host_etc/.??*; do
 			if [ -e "$x" ] && [ ! -e "${x#host_}" ]; then
 				ln -s "$IDIR/$x" etc/ || :
 			fi
 		done
-		mount --bind etc /etc
+		if [ -d /run/systemd/resolve ]; then
+			mount -t tmpfs -o mode=0755 none /run/systemd/resolve
+		fi
+		mount --rbind etc /etc
 		export N_U_W_IDIR="$IDIR" N_U_W_NETNS="$NETNS_FILE"
 		if [ -x conf/setup-netns-outer ]; then
-			conf/setup-netns-outer "$@"
+			. conf/setup-netns-outer "$@"
 		fi
 		if [ -x conf/setup-netns-inner ]; then
 			nsenter --net="$NETNS_FILE" conf/setup-netns-inner "$@"
