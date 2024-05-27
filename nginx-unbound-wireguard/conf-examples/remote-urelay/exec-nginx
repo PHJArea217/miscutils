@@ -1,0 +1,2 @@
+#!/bin/sh
+exec LD_PRELOAD="$N_U_W_LDPRELOAD" "$N_U_W_IDIR/nginx.bin" -p /etc/nginx -c nginx.conf

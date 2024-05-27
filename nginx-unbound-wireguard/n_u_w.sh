@@ -29,8 +29,8 @@ case "$IDIR" in
 		mount --rbind conf/nginx etc/nginx
 		mount --rbind conf/unbound etc/unbound
 		printf "%s\n" > etc/inittab \
-			"::respawn:/usr/bin/ld.so /usr/sbin/unbound" \
-			"::respawn:$IDIR/conf/exec-nginx"
+			"::respawn:/usr/bin/nsenter --net=$IDIR/i_netns /usr/bin/ld.so /usr/sbin/unbound" \
+			"::respawn:/usr/bin/nsenter --net=$IDIR/i_netns $IDIR/conf/exec-nginx"
 		for x in host_etc/* host_etc/.??*; do
 			if [ -e "$x" ] && [ ! -e "${x#host_}" ]; then
 				ln -s "$IDIR/$x" etc/ || :
@@ -41,13 +41,16 @@ case "$IDIR" in
 		fi
 		mount --rbind etc /etc
 		export N_U_W_IDIR="$IDIR" N_U_W_NETNS="$NETNS_FILE"
+		ln -s "$IDIR" /proc/fs/nfsd/__n_u_w_idir__
 		if [ -x conf/setup-netns-outer ]; then
-			. conf/setup-netns-outer "$@"
+			. conf/setup-netns-outer
 		fi
 		if [ -x conf/setup-netns-inner ]; then
 			nsenter --net="$NETNS_FILE" conf/setup-netns-inner "$@"
 		fi
-		exec nsenter --net="$NETNS_FILE" /bin/busybox init
+		:>"$IDIR/i_netns"
+		nsenter --net="$NETNS_FILE" mount --bind /proc/self/ns/net "$IDIR/i_netns"
+		exec /bin/busybox init
 		;;
 esac
 exit 1

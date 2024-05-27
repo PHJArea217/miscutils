@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+umask 077
+mkdir -pm 0700 "$IDIR/conf/wg"
+if [ ! -r "$IDIR/conf/wg/privkey" ]; then
+	wg genkey "$IDIR/conf/wg/privkey"
+fi
+wg set wg0 private-key "$IDIR/conf/wg/privkey"
+wg addconf wg0 "$IDIR/conf/wg.conf"

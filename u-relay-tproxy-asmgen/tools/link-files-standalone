@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+: "${CROSS_COMPILE=mips-linux-gnu-}"
+"$CROSS_COMPILE"ld $4 -o "$3.elf" "$2"
+case "$1" in
+	domains)
+		"$CROSS_COMPILE"objcopy -O binary "$3.elf" "$3.bin" -j .data
+		;;
+	master)
+		"$CROSS_COMPILE"objcopy -O binary "$3.elf" "$3.bin-a" -j .data
+		"$CROSS_COMPILE"objcopy -O binary "$3.elf" "$3.bin-b" -j .master-data
+		cat "$3.bin-a" "$3.bin-b" > "$3.bin"
+		;;
+esac

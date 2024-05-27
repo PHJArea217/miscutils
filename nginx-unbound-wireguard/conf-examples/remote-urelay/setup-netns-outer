@@ -1,0 +1,43 @@
+#!/bin/sh
+{
+ipv6_prefix=4254777358 # fd9a:c00e::/32
+inner_wireguard=0
+wg_tempname=wg_0
+for arg in "$@"; do
+	case "$arg" in
+		ipv6_prefix_hi=*)
+			ipv6_prefix_str="${arg#ipv6_prefix_hi=}"
+			ipv6_prefix="$((ipv6_prefix_str))"
+			;;
+		inner_wg)
+			inner_wireguard=1
+			;;
+		wg_tempname=*)
+			wg_tempname="wg${arg#wg_tempname=}"
+			;;
+	esac
+done
+ipv6_prefix_0="$(((ipv6_prefix>>16)&0xffff))"
+ipv6_prefix_1="$((ipv6_prefix&0xffff))"
+if [ 0 -eq "$inner_wireguard" ]; then
+	ip link add "$wg_tempname" type wireguard
+	ip link set "$wg_tempname" netns /proc/self/fd/3 3<"$N_U_W_NETNS"
+	nsenter --net="$N_U_W_NETNS" ip link set "$wg_tempname" name wg0
+else
+	printf '%s\n'"::respawn:$N_U_W_IDIR/conf/wg-udp-relay" >> /etc/inittab
+fi
+mkdir -p "$IDIR/run"
+printf '"~^%x:%x:([0-9a-f:]*)$" "[fe8f:2:$1]";\n' "$ipv6_prefix_0" "$ipv6_prefix_1" > "$IDIR/run/ipv6-prefix.conf"
+printf '{
+IPV6_PREFIX=%x:%x
+if [ ! -d /proc/sys/net/ipv4/conf/wg0 ]; then
+	ip link add wg0 type wireguard
+fi
+ip l set lo up
+# ip6tables -A PREROUTING -i wg0 -d "$IPV6_PREFIX":0:0:0:0:0:0/32" -j DROP
+ip r a local "$IPV6_PREFIX:0:0:0:0:0:0/32" dev lo
+ip a a "$IPV6_PREFIX:0:0:0:0:0:1" dev wg0
+ip link set wg0 up
+ip r a ::/0 dev wg0
+}' "$ipv6_prefix_0" "$ipv6_prefix_1"| nsenter --net="$N_U_W_NETNS" sh -eu -s
+}
