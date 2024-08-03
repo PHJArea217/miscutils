@@ -11,7 +11,7 @@ static_routes() {
 	COUNTER=0
 	while [ "$COUNTER" -lt 128 ]; do
 		if [ "$COUNTER" -eq "$3" ]; then
-			printf 'route add unreachable "%s:%x00:0:0:0:0/64"\n' "$1" "$COUNTER"
+			printf 'route add unreachable "%s:%x00:0:0:0:0/56"\n' "$1" "$COUNTER"
 		else
 			printf 'route add "%s:%x00:0:0:0:0/56" via "fe80::100:%x" dev "%s"\n' "$1" "$COUNTER" "$COUNTER" "$2"
 		fi
